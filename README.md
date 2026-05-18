@@ -6,17 +6,17 @@ Wonchang의 **프론트엔드 개발 환경** — Claude Code marketplace 형태
 
 ## 포함된 plugin
 
-| Plugin | 무엇 | 언제 깔까 |
-|---|---|---|
-| `seokit-rules` | React/TS 코드 규약(CODE_RULES.md) 자동 강제 — skill·`/code-review`·subagent | 거의 모든 FE 프로젝트 |
-| `seokit-api` | openapi-typescript 산출물 변경분을 도메인 파일에 수술적 반영하는 agent | openapi-typescript + TanStack Query 스택 프로젝트 |
+| Plugin         | 무엇                                                                        | 언제 깔까                                         |
+| -------------- | --------------------------------------------------------------------------- | ------------------------------------------------- |
+| `seokit-rules` | React/TS 코드 규약(CODE_RULES.md) 자동 강제 — skill·`/code-review`·subagent | 거의 모든 FE 프로젝트                             |
+| `seokit-api`   | openapi-typescript 산출물 변경분을 도메인 파일에 수술적 반영하는 agent      | openapi-typescript + TanStack Query 스택 프로젝트 |
 
 ## Marketplace 등록 (한 번)
 
 Claude Code 안에서:
 
 ```
-/plugin marketplace add github:Wonchang0314/seokit
+/plugin marketplace add Wonchang0314/seokit
 ```
 
 이 명령으로 marketplace `frontend-development-plugin`이 본인 시스템에 카탈로그로 추가됨. 이후 plugin들을 개별 설치 가능.
