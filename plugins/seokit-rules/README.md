@@ -1,6 +1,6 @@
-# seokit (Claude Code plugin)
+# seokit-rules (Claude Code plugin)
 
-React/TypeScript 코드 작성 시 `CODE_RULES.md`를 Claude가 자동으로 강제하도록 만드는 플러그인.
+React/TypeScript 코드 작성 시 `CODE_RULES.md`를 Claude가 자동으로 강제하도록 만드는 plugin.
 
 ## 설치
 
@@ -8,7 +8,7 @@ Claude Code 안에서:
 
 ```
 /plugin marketplace add github:Wonchang0314/seokit
-/plugin install seokit@frontend-development-plugin
+/plugin install seokit-rules@frontend-development-plugin
 ```
 
 ## 활성화 (프로젝트별 opt-in)
@@ -18,7 +18,7 @@ Claude Code 안에서:
 ```json
 {
   "enabledPlugins": {
-    "seokit@frontend-development-plugin": true
+    "seokit-rules@frontend-development-plugin": true
   }
 }
 ```
@@ -54,7 +54,7 @@ Claude Code 안에서:
 
 ```
 /plugin marketplace add /path/to/seokit
-/plugin install seokit@frontend-development-plugin
+/plugin install seokit-rules@frontend-development-plugin
 ```
 
-`marketplace.json` 수정 후에는 `/plugin marketplace update seokit`.
+`marketplace.json`·plugin 파일 수정 후에는 `/plugin marketplace update frontend-development-plugin`.

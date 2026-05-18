@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.2.0 — Split into multi-plugin marketplace (breaking)
+
+### Breaking
+- Plugin renamed: `seokit` → `seokit-rules`. 설치 명령 변경:
+  - 이전: `/plugin install seokit@frontend-development-plugin`
+  - 이후: `/plugin install seokit-rules@frontend-development-plugin`
+- `enabledPlugins` 키도 `seokit-rules@frontend-development-plugin`로 갱신 필요
+
+### Added
+- `seokit-api` plugin (`plugins/seokit-api/`): openapi-typescript + TanStack Query 프로젝트용
+  API 스캐폴딩 agent (`api-scaffold`). 시작 시 자동 정찰로 PM·경로·명령·응답 컨벤션을 학습하고
+  `.api-scaffold.json`에 캐시. 변경분만 도메인 파일에 수술적 반영.
+- Marketplace 설명 갱신: 모듈식 plugin 카탈로그 형태로 표현
+
+### Changed
+- `plugins/seokit/` → `plugins/seokit-rules/` (git mv로 history 보존)
+- 루트 README를 marketplace 카탈로그 안내 중심으로 재작성
+
 ## 0.1.0 — Initial plugin release
 
 ### Added
