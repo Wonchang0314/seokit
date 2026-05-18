@@ -400,7 +400,7 @@ AI 에이전트는 다음 상황에서 **코드 작성·변경 전 반드시 사
 | 임포트 정렬 | `import/order` | §3.5.3 |
 | a11y 시맨틱/키보드/alt | `jsx-a11y/*` | §4.1 |
 
-샘플 ESLint flat config 는 [eslint.config.sample.mjs](./eslint.config.sample.mjs) 참조.
+v0.1부터 lint 자동화는 seokit Claude plugin이 대신한다 — §3 `[lint:]` 표기는 의도 기록 용도로 유지하며 별도 ESLint 샘플은 제공하지 않는다.
 
 ## 부록 B. `[review-only]` 룰 체크리스트 (에이전트 셀프 점검)
 

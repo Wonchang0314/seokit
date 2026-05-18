@@ -1,0 +1,22 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "seokit",
+  "description": "Personal React/TypeScript code rule enforcement plugin for Claude Code",
+  "owner": {
+    "name": "Wonchang Seok",
+    "email": "developerseok@gmail.com"
+  },
+  "plugins": [
+    {
+      "name": "seokit",
+      "description": "Enforces seokit's React/TypeScript code conventions via auto-invoked skill, /code-review command, and deep-review subagent. Drives all enforcement from CODE_RULES.md (§3 MUST rules + §5 agent contract).",
+      "author": {
+        "name": "Wonchang Seok",
+        "email": "developerseok@gmail.com"
+      },
+      "category": "code-quality",
+      "source": "./plugins/seokit",
+      "homepage": "https://github.com/Wonchang0314/seokit"
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "name": "seokit",
+  "version": "0.1.0",
+  "description": "Enforce seokit's React/TypeScript CODE_RULES.md across consuming projects via auto-invoked skill, /code-review command, and seokit-reviewer subagent.",
+  "author": {
+    "name": "Wonchang Seok",
+    "email": "developerseok@gmail.com"
+  },
+  "homepage": "https://github.com/Wonchang0314/seokit"
+}
