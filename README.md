@@ -10,7 +10,7 @@ Claude Code 안에서:
 
 ```
 /plugin marketplace add github:Wonchang0314/seokit
-/plugin install seokit@seokit
+/plugin install seokit@frontend-development-plugin
 ```
 
 ## 활성화 (프로젝트별)
@@ -20,7 +20,7 @@ Claude Code 안에서:
 ```json
 {
   "enabledPlugins": {
-    "seokit@seokit": true
+    "seokit@frontend-development-plugin": true
   }
 }
 ```
@@ -54,7 +54,7 @@ git clone https://github.com/Wonchang0314/seokit.git
 cd seokit
 # Claude Code 안에서:
 /plugin marketplace add /absolute/path/to/seokit
-/plugin install seokit@seokit
+/plugin install seokit@frontend-development-plugin
 ```
 
 `marketplace.json`·`plugin.json`·`SKILL.md` 등을 수정한 후에는 `/plugin marketplace update seokit`으로 재로드.

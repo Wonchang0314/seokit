@@ -1,6 +1,6 @@
 {
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
-  "name": "seokit",
+  "name": "frontend-development-plugin",
   "description": "Personal React/TypeScript code rule enforcement plugin for Claude Code",
   "owner": {
     "name": "Wonchang Seok",

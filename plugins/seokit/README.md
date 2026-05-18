@@ -8,7 +8,7 @@ Claude Code 안에서:
 
 ```
 /plugin marketplace add github:Wonchang0314/seokit
-/plugin install seokit@seokit
+/plugin install seokit@frontend-development-plugin
 ```
 
 ## 활성화 (프로젝트별 opt-in)
@@ -18,7 +18,7 @@ Claude Code 안에서:
 ```json
 {
   "enabledPlugins": {
-    "seokit@seokit": true
+    "seokit@frontend-development-plugin": true
   }
 }
 ```
@@ -54,7 +54,7 @@ Claude Code 안에서:
 
 ```
 /plugin marketplace add /path/to/seokit
-/plugin install seokit@seokit
+/plugin install seokit@frontend-development-plugin
 ```
 
 `marketplace.json` 수정 후에는 `/plugin marketplace update seokit`.
