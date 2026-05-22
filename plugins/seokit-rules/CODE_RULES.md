@@ -186,6 +186,74 @@ const { data: user } = useUserQuery(id)
 // 필요 시 mutate / setQueryData 로 캐시 직접 수정
 ```
 
+#### 3.3.4 비동기 UI 의 로딩·에러는 선언형 경계로 처리 `[review-only]`
+
+서버 데이터를 쓰는 컴포넌트에서 로딩·에러 상태를 **명령형으로 다루지 않는다**. 다음을 금지한다:
+
+- `useEffect` 안에서 직접 `fetch`/`axios` 를 호출하고 `setState` 로 data/loading/error 를 수동 관리
+- 컴포넌트 본문에서 `if (isLoading) return <Spinner/>` / `if (isError) return <Error/>` 같은 조기 return 분기로 로딩·에러 UI 를 그리기
+
+대신 로딩·에러 UI 를 **선언형 경계**로 끌어올린다. 로딩은 `<Suspense>`, 에러는 `ErrorBoundary` 가 담당하고, 데이터를 소비하는 컴포넌트는 "성공한 데이터" 만 가정하고 렌더한다. 이 둘은 항상 쌍으로 쓰이므로, 프로젝트는 둘을 묶은 공통 `<AsyncBoundary>` 컴포넌트를 하나 두고 그것을 표준으로 사용한다.
+
+❌ 명령형
+```tsx
+function UserProfile({ id }: UserProfileProps) {
+  const [user, setUser] = useState<User | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<Error | null>(null)
+
+  useEffect(function fetchUserOnIdChange() {
+    fetchUserById(id)
+      .then(setUser)
+      .catch(setError)
+      .finally(() => setIsLoading(false))
+  }, [id])
+
+  if (isLoading) return <Spinner />
+  if (error) return <ErrorMessage error={error} />
+  return <article>{user!.name}</article>
+}
+```
+
+✅ 선언형 경계
+```tsx
+// AsyncBoundary.tsx — 프로젝트 공통, 한 번만 작성
+interface AsyncBoundaryProps {
+  pending: ReactNode
+  errorFallback: (props: { error: Error; reset: () => void }) => ReactNode
+  children: ReactNode
+}
+
+export function AsyncBoundary({ pending, errorFallback, children }: AsyncBoundaryProps) {
+  return (
+    <ErrorBoundary fallbackRender={errorFallback}>
+      <Suspense fallback={pending}>{children}</Suspense>
+    </ErrorBoundary>
+  )
+}
+
+// 소비 컴포넌트 — 성공 데이터만 가정
+function UserProfile({ id }: UserProfileProps) {
+  const { data: user } = useSuspenseQuery(userQuery(id))
+  return <article>{user.name}</article>
+}
+
+// 조립부
+<AsyncBoundary pending={<UserSkeleton />} errorFallback={UserErrorFallback}>
+  <UserProfile id={id} />
+</AsyncBoundary>
+```
+
+**라우터 무관 원칙**: 컴포넌트 레벨 `<AsyncBoundary>` 가 라우팅 라이브러리와 무관한 일반 해법이다. 라우트 단위로는 라우터가 제공하는 동등 수단을 쓴다 — TanStack Router 의 `pendingComponent`/`errorComponent`, React Router 의 `HydrateFallback`/`errorElement` 등. 이들은 "라우트 레벨의 선언형 경계" 이며 같은 원칙의 다른 적용일 뿐이다. 어떤 라우터를 쓰든 핵심은 동일하다 — **로딩·에러는 분기가 아니라 경계로 선언한다.**
+
+**왜**: 소비 컴포넌트가 "성공" 한 가지 경우만 다뤄 본문이 단순해진다. 로딩·에러 UI 가 트리의 한 곳에 모여 일관된다. `ErrorBoundary` 는 렌더링 중 throw 까지 잡으므로 처리 누락이 없다. §3.3.3 (서버 상태를 `useState` 로 복사 금지) 의 자연스러운 연장이다.
+
+**기존 명령형 코드**: 작업 중 명령형 로딩·에러 처리를 발견하면 선언형 경계로의 리팩토링을 **권유**한다. 단 현재 작업 범위를 벗어난 강제 변경은 하지 않고, 사용자에게 리팩토링 제안만 남긴다.
+
+**예외**:
+- 뮤테이션(폼 제출, 삭제 등)의 pending/error 는 인라인 처리(버튼 비활성화, 인라인 메시지)를 허용한다. 경계 대상은 읽기(쿼리) 로딩·에러다.
+- `ErrorBoundary` 는 React 기본 제공이 아니다. class 컴포넌트로 자체 구현하거나 `react-error-boundary` 도입(§5.1 묻기 대상)을 사용자와 합의한다. 도입 전까지는 라우터 레벨 에러 경계로 대체할 수 있다.
+
 ---
 
 ### 3.4 TypeScript
@@ -414,3 +482,4 @@ v0.1부터 lint 자동화는 seokit Claude plugin이 대신한다 — §3 `[lint
 - [ ] 주석이 "어떻게" 가 아니라 "왜" 를 설명하는가
 - [ ] 한글 변수가 §3.7.4 의 도메인 용어 조건을 만족하는가
 - [ ] Boolean 이름이 `is/has/can/should` 접두사를 가지는가
+- [ ] 비동기 UI 의 로딩·에러를 명령형 분기가 아닌 선언형 경계(`<AsyncBoundary>` 등)로 처리했는가
