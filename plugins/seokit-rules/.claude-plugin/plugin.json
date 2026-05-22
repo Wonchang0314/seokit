@@ -1,6 +1,6 @@
 {
   "name": "seokit-rules",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Enforce React/TypeScript code conventions defined in CODE_RULES.md via an auto-invoked skill, /code-review slash command, and seokit-reviewer subagent.",
   "author": {
     "name": "Wonchang Seok",
