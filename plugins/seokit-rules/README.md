@@ -39,7 +39,7 @@ Claude Code 안에서:
 
 - 컴포넌트·헬퍼·useEffect 콜백 named function (§3.1)
 - 훅 컨벤션, 객체 반환 (§3.2)
-- 로컬 상태 우선, props drilling ≤3 (§3.3)
+- 로컬 상태 우선, props drilling ≤3, 비동기 UI 로딩·에러는 선언형 경계 (§3.3)
 - `any` 금지, 매직 넘버 상수화, 기존 타입 재사용 (§3.4)
 - Named export only, 임포트 정렬 (§3.5)
 - "왜" 주석만 (§3.6)
