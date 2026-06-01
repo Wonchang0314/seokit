@@ -175,14 +175,14 @@ API 응답 데이터(서버 상태)는 React Query/SWR 등 캐시 라이브러�
 
 ❌
 ```tsx
-const { data: user } = useUserQuery(id)
+const { data: user } = useSuspenseQuery(userQuery(id))
 const [localUser, setLocalUser] = useState(user)  // 서버→로컬 복사
 useEffect(() => setLocalUser(user), [user])
 ```
 
 ✅
 ```tsx
-const { data: user } = useUserQuery(id)
+const { data: user } = useSuspenseQuery(userQuery(id))
 // 필요 시 mutate / setQueryData 로 캐시 직접 수정
 ```
 
@@ -253,6 +253,63 @@ function UserProfile({ id }: UserProfileProps) {
 **예외**:
 - 뮤테이션(폼 제출, 삭제 등)의 pending/error 는 인라인 처리(버튼 비활성화, 인라인 메시지)를 허용한다. 경계 대상은 읽기(쿼리) 로딩·에러다.
 - `ErrorBoundary` 는 React 기본 제공이 아니다. class 컴포넌트로 자체 구현하거나 `react-error-boundary` 도입(§5.1 묻기 대상)을 사용자와 합의한다. 도입 전까지는 라우터 레벨 에러 경계로 대체할 수 있다.
+
+#### 3.3.5 쿼리 호출 형태 — 순수 조회는 query options 직접 호출 `[review-only]`
+
+서버 조회·뮤테이션의 호출 형태를 **데이터 가공·부수효과 결합 여부**로 가른다.
+
+- **순수 조회/뮤테이션** — `queryFn` 응답을 그대로 반환하고, `select` 전처리도 없고, toast/라우팅/캐시 무효화 같은 부수효과도 결합돼 있지 않은 경우: `queryOptions`/`mutationOptions` 팩토리를 정의·export 하고, 소비 컴포넌트에서 `useSuspenseQuery`/`useQuery`/`useMutation` 을 **직접 호출**한다. 단순 위임만 하는 커스텀 훅(`useUserQuery` 등)으로 감싸지 않는다.
+- **가공·결합 조회** — `select` 로 필터·정렬·파생, 여러 쿼리 조합, 뮤테이션의 `onSuccess` toast/라우팅/캐시 무효화 등 부수효과가 결합되는 경우: §3.2.4 의 도메인 흐름 훅으로 분리한다.
+
+❌ 위임만 하는 래핑
+```ts
+// useUserQuery.ts — query options 결과를 그대로 넘기기만 함
+function useUserQuery(id: string) {
+  return useSuspenseQuery(userQuery(id))
+}
+```
+
+✅ query options 직접 호출
+```ts
+// queries/user.ts — query options 팩토리 (단일 출처)
+export function userQuery(id: string) {
+  return queryOptions({
+    queryKey: ['user', id],
+    queryFn: () => fetchUserById(id),
+  })
+}
+
+// 소비 컴포넌트 — import 해서 직접 호출
+function UserProfile({ id }: UserProfileProps) {
+  const { data: user } = useSuspenseQuery(userQuery(id))
+  return <article>{user.name}</article>
+}
+```
+
+✅ 가공·부수효과가 있으면 도메인 훅으로 (예외)
+```ts
+// select 전처리 → 훅으로 분리
+function useActiveUsers() {
+  return useQuery({
+    ...usersQuery(),
+    select: (users) => users.filter((user) => user.isActive),
+  })
+}
+
+// 뮤테이션 + 부수효과 → 도메인 훅으로 분리
+function useDeleteUser() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    ...deleteUserMutation(),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['user'] })
+      toast.success('삭제되었습니다')
+    },
+  })
+}
+```
+
+**왜**: 위임만 하는 훅은 호출 한 겹을 늘리고 query options 의 재사용성(prefetch, `setQueryData`, 다른 쿼리와의 조합)을 가린다. query options 를 직접 import 하면 컴포넌트·prefetch·테스트가 같은 단일 출처를 공유한다. 가공·부수효과가 있을 때만 훅이라는 경계가 실제 값을 한다 — §3.2.4(셸/도메인 훅 분리)·§3.3.4(선언형 경계)의 자연스러운 연장이다.
 
 ---
 
@@ -483,3 +540,4 @@ v0.1부터 lint 자동화는 seokit Claude plugin이 대신한다 — §3 `[lint
 - [ ] 한글 변수가 §3.7.4 의 도메인 용어 조건을 만족하는가
 - [ ] Boolean 이름이 `is/has/can/should` 접두사를 가지는가
 - [ ] 비동기 UI 의 로딩·에러를 명령형 분기가 아닌 선언형 경계(`<AsyncBoundary>` 등)로 처리했는가
+- [ ] 순수 조회·뮤테이션을 위임 전용 커스텀 훅으로 감싸지 않고 query/mutation options 를 컴포넌트에서 직접 호출했는가 (§3.3.5)
