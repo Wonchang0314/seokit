@@ -17,15 +17,14 @@ description: Enforce seokit's React/TypeScript code conventions when writing or 
 - **§5 STOP-AND-ASK**: 다음 세 가지는 **코드 변경 전 반드시 사용자에게 묻고 승인받은 뒤 진행**한다 — 새 npm 의존성 (§5.1), 새 전역 상태/Context/store (§5.2), 기존 타입 재사용 가능 시 새 타입 작성 (§5.3). 질문 템플릿은 CODE_RULES.md §5의 한국어 원문 그대로 사용.
 - **작성 후**: CODE_RULES.md 부록 B (review-only 셀프 체크리스트) 9개 항목 walk. 실패 항목은 같은 응답에서 바로 수정 (§5 케이스는 묻고 진행).
 
-## 3. subagent로 escalate
+## 3. 리뷰·심층 점검 요청
 
-다음 중 하나라도 해당하면 Task tool로 `seokit-reviewer` subagent 호출:
-- 한 응답에서 변경 파일 5개 초과
+다음 중 하나라도 해당하면 변경 범위를 직접 읽고 CODE_RULES.md 대비 점검해 **구조화된 findings**(파일:라인 + 위반 규칙 섹션)로 보고한다:
 - 사용자가 "review" / "check" / "audit" / "리뷰" / "점검" 요청
 - §3.4.3 타입 재사용 분석을 위해 feature 디렉터리 전체 훑기 필요
 - 큰 리팩터링 완료 후 "done" 선언 직전
 
-단일 파일 인라인 수정은 호출하지 않는다.
+findings는 §5 케이스(묻고 진행) 외에는 같은 응답에서 바로 수정한다.
 
 ## 4. 적용 범위
 

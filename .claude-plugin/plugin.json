@@ -1,0 +1,9 @@
+{
+  "name": "seokit-frontend",
+  "description": "Wonchang's frontend harness — auto-invoked React/TypeScript code-convention enforcement (CODE_RULES.md) plus OpenAPI-driven API module scaffolding for openapi-typescript + TanStack Query projects.",
+  "author": {
+    "name": "Wonchang Seok",
+    "email": "developerseok@gmail.com"
+  },
+  "homepage": "https://github.com/Wonchang0314/seokit"
+}

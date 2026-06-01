@@ -1,32 +1,21 @@
 {
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "frontend-development-plugin",
-  "description": "Wonchang's frontend development harness for Claude Code — modular plugins for code rules, API scaffolding, and more.",
+  "description": "Wonchang's frontend development harness for Claude Code — a single plugin bundling code-convention enforcement and API scaffolding.",
   "owner": {
     "name": "Wonchang Seok",
     "email": "developerseok@gmail.com"
   },
   "plugins": [
     {
-      "name": "seokit-rules",
-      "description": "Enforce React/TypeScript code conventions from CODE_RULES.md via auto-invoked skill, /code-review command, and seokit-reviewer subagent. Drives all enforcement from §3 MUST rules + §5 agent contract.",
+      "name": "seokit-frontend",
+      "description": "Auto-invoked React/TypeScript code-convention enforcement (CODE_RULES.md §3 MUST + §5 agent contract) plus the api-scaffold agent for openapi-typescript + TanStack Query projects.",
       "author": {
         "name": "Wonchang Seok",
         "email": "developerseok@gmail.com"
       },
       "category": "code-quality",
-      "source": "./plugins/seokit-rules",
-      "homepage": "https://github.com/Wonchang0314/seokit"
-    },
-    {
-      "name": "seokit-api",
-      "description": "OpenAPI-driven API module scaffolding for openapi-typescript + TanStack Query projects. Detects project conventions and surgically applies generated diffs to domain api/types/queryKeys/queries files. Preserves human-authored code.",
-      "author": {
-        "name": "Wonchang Seok",
-        "email": "developerseok@gmail.com"
-      },
-      "category": "code-generation",
-      "source": "./plugins/seokit-api",
+      "source": "./",
       "homepage": "https://github.com/Wonchang0314/seokit"
     }
   ]
