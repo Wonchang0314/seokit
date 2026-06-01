@@ -15,7 +15,7 @@ description: Enforce seokit's React/TypeScript code conventions when writing or 
 
 - **작성 전**: §3 MUST 규칙 (3.1~3.7) 전부 만족하도록 작성.
 - **§5 STOP-AND-ASK**: 다음 세 가지는 **코드 변경 전 반드시 사용자에게 묻고 승인받은 뒤 진행**한다 — 새 npm 의존성 (§5.1), 새 전역 상태/Context/store (§5.2), 기존 타입 재사용 가능 시 새 타입 작성 (§5.3). 질문 템플릿은 CODE_RULES.md §5의 한국어 원문 그대로 사용.
-- **작성 후**: CODE_RULES.md 부록 B (review-only 셀프 체크리스트) 9개 항목 walk. 실패 항목은 같은 응답에서 바로 수정 (§5 케이스는 묻고 진행).
+- **작성 후**: CODE_RULES.md 부록 B (review-only 셀프 체크리스트) 전 항목 walk. 실패 항목은 같은 응답에서 바로 수정 (§5 케이스는 묻고 진행).
 
 ## 3. 리뷰·심층 점검 요청
 

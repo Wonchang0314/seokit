@@ -3,6 +3,8 @@
 날짜: 2026-05-22
 대상 파일: `plugins/seokit-rules/CODE_RULES.md`, `plugins/seokit-rules/skills/seokit-rules/SKILL.md`
 
+> **후속 변경 (2026-06-01)**: 이후 리포가 단일 플러그인 `seokit-frontend` 로 통합되며 위 대상 파일 경로는 루트의 `CODE_RULES.md`·`skills/seokit-rules/SKILL.md` 로 이동했다. 또한 `seokit-reviewer` 에이전트와 `/code-review` 커맨드는 제거되어, 본 문서의 에이전트 순회 관련 서술(§2 배치 근거의 `§3.1→§3.7` 순회, §4 의 "수정 불필요")은 더 이상 적용되지 않는다 — 리뷰는 스킬 인라인으로 수행된다. 아래 본문은 2026-05-22 결정 시점의 기록으로 보존한다.
+
 ## 1. 배경 / 문제
 
 현재 `CODE_RULES.md` 에는 비동기 UI 의 로딩·에러 처리 방식을 규정하는 룰이 없다.
