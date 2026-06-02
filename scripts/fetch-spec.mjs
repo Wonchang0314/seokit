@@ -29,6 +29,28 @@ function parseEnvBody(body) {
   return out;
 }
 
+// 우선순위 순서대로 첫 존재 키 채택
+const ENV_KEY_PRIORITY = [
+  "VITE_API_URL",
+  "NEXT_PUBLIC_API_URL",
+  "REACT_APP_API_URL",
+  "API_BASE_URL",
+];
+
+export function resolveSpecOrigin(env) {
+  for (const key of ENV_KEY_PRIORITY) {
+    const value = env[key];
+    if (!value) continue;
+    try {
+      const u = new URL(value);
+      return `${u.protocol}//${u.host}`;
+    } catch {
+      return null;
+    }
+  }
+  return null;
+}
+
 export function parseEnvFiles(cwd) {
   let merged = {};
   for (const name of ENV_FILE_ORDER) {
