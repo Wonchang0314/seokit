@@ -122,6 +122,7 @@ generated 파일이 **부재**하거나 사용자가 "최신 스펙으로 재생
 - **변경분만 반영**: gen 전후 generated 파일의 diff만 식별·적용.
 - **불확실하면 묻는다**: 매핑이 모호하거나 사용자 코드를 덮어쓸 위험 시 `AskUserQuestion`.
 - **학습된 컨벤션 따름**: §0-6에서 파악한 응답·인자 패턴 그대로. 임의로 wrapper 가정·재가공 금지.
+- **seokit-rules 준수**: 도메인 파일 생성·수정은 CODE_RULES.md(§3 MUST, §5 에이전트 계약)를 따른다.
 
 ## §2. 입력 / 출력
 
@@ -174,6 +175,19 @@ git 가용 불가 시 §3-1 캡처 vs 생성 후 grep 결과 비교.
 사용자 확인 보류 항목은 별도 섹션에.
 
 ## §4. 적용 규칙
+
+### 4-A0. 엔티티 레이어 전체 부재 → tags 기준 일괄 생성
+
+도메인 폴더가 하나도 없으면(최초 세팅) generated의 OpenAPI로부터 도메인을 도출해 4-file을
+일괄 생성한다.
+
+- **도메인 분류 기준**: OpenAPI operation의 `tags` 우선. 한 operation에 다중 tag면 첫 tag 채택.
+  `tags`가 전혀 없으면 path prefix(`/users/...` → `users`)로 fallback. LLM 임의 분류 금지.
+- tag/prefix별로 `{domain}/{api,types,queryKeys,queries}.ts`를 `Write`로 생성.
+- 코드 작성은 **`seokit-rules`(CODE_RULES.md) 준수**: 도메인 파일은 커스텀 훅을 export하지 않고
+  `queryOptions`/`mutationOptions` 팩토리만 export한다(§3 MUST 규칙 포함).
+- 실제 호출처가 없는 endpoint/타입은 만들지 않는다는 원칙은 최초 생성에도 동일 적용하되,
+  최초 세팅에서는 generated의 전 operation을 대상으로 한다(이후 증분은 §4-B).
 
 ### 4-A. 신규 도메인
 
