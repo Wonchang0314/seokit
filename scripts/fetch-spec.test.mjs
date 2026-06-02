@@ -201,3 +201,25 @@ test("main runs codegen with explicit input and returns its status", async () =>
   assert.ok(calledWith.args.includes("http://x.test/openapi.json"));
   assert.ok(calledWith.args.includes("generated/api.ts"));
 });
+
+// Fix 1: 상위 우선순위 키가 유효하지 않은 URL이어도 하위 후보에서 유효한 값을 반환해야 함
+test("resolveSpecOrigin falls through to next key when higher-priority key has unparseable URL", () => {
+  const env = {
+    VITE_API_URL: "not-a-url",
+    NEXT_PUBLIC_API_URL: "http://api.test",
+  };
+  assert.equal(resolveSpecOrigin(env), "http://api.test");
+});
+
+// Fix 2: openapi/swagger 키가 없는 JSON 응답은 스펙으로 인정하지 않아야 함
+test("probeSpec returns null when all endpoints respond with non-spec JSON", async () => {
+  const { server, origin } = await startServer((req, res) => {
+    res.setHeader("content-type", "application/json");
+    res.end(JSON.stringify({ status: "ok" }));
+  });
+  try {
+    assert.equal(await probeSpec(origin), null);
+  } finally {
+    server.close();
+  }
+});

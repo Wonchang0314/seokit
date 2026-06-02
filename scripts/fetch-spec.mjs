@@ -65,7 +65,13 @@ async function tryJson(url, fetchImpl) {
     if (!res.ok) return null;
     const text = await res.text();
     try {
-      return JSON.parse(text);
+      const json = JSON.parse(text);
+      // 객체에 openapi 또는 swagger 키가 있는 경우에만 스펙으로 인정
+      if (json && typeof json === "object" && !Array.isArray(json) &&
+          ("openapi" in json || "swagger" in json)) {
+        return json;
+      }
+      return null; // 스펙이 아닌 JSON(예: 헬스체크 응답)이면 스킵
     } catch {
       return null; // HTML(Swagger UI 등)이면 스킵
     }
@@ -99,7 +105,7 @@ export function resolveSpecOrigin(env) {
       const u = new URL(value);
       return `${u.protocol}//${u.host}`;
     } catch {
-      return null;
+      continue; // 유효하지 않은 URL이면 다음 후보로 이동
     }
   }
   return null;
