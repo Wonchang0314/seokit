@@ -42,6 +42,30 @@ export function specCandidatePaths() {
   ];
 }
 
+async function tryJson(url, fetchImpl) {
+  try {
+    const res = await fetchImpl(url, { headers: { accept: "application/json" } });
+    if (!res.ok) return null;
+    const text = await res.text();
+    try {
+      return JSON.parse(text);
+    } catch {
+      return null; // HTML(Swagger UI 등)이면 스킵
+    }
+  } catch {
+    return null; // 연결 실패 등
+  }
+}
+
+export async function probeSpec(origin, { fetchImpl = fetch } = {}) {
+  for (const path of specCandidatePaths()) {
+    const url = `${origin}${path}`;
+    const spec = await tryJson(url, fetchImpl);
+    if (spec) return { url, spec };
+  }
+  return null;
+}
+
 // 우선순위 순서대로 첫 존재 키 채택
 const ENV_KEY_PRIORITY = [
   "VITE_API_URL",

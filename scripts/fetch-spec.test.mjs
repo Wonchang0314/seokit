@@ -3,7 +3,8 @@ import assert from "node:assert/strict";
 import { mkdtempSync, writeFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { parseEnvFiles, resolveSpecOrigin, specCandidatePaths } from "./fetch-spec.mjs";
+import { parseEnvFiles, resolveSpecOrigin, specCandidatePaths, probeSpec } from "./fetch-spec.mjs";
+import { createServer } from "node:http";
 
 function tmpProject(files) {
   const dir = mkdtempSync(join(tmpdir(), "fetch-spec-"));
@@ -55,5 +56,46 @@ test("parseEnvFiles merges files with .local overriding base", () => {
     assert.equal(env.FOO, "1");
   } finally {
     rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+function startServer(handler) {
+  return new Promise((resolve) => {
+    const server = createServer(handler);
+    server.listen(0, "127.0.0.1", () => {
+      const { port } = server.address();
+      resolve({ server, origin: `http://127.0.0.1:${port}` });
+    });
+  });
+}
+
+test("probeSpec returns first endpoint that responds with JSON spec", async () => {
+  const { server, origin } = await startServer((req, res) => {
+    if (req.url === "/v3/api-docs") {
+      res.setHeader("content-type", "application/json");
+      res.end(JSON.stringify({ openapi: "3.0.0", paths: {} }));
+    } else {
+      res.statusCode = 404;
+      res.end("nope");
+    }
+  });
+  try {
+    const result = await probeSpec(origin);
+    assert.equal(result.url, `${origin}/v3/api-docs`);
+    assert.equal(result.spec.openapi, "3.0.0");
+  } finally {
+    server.close();
+  }
+});
+
+test("probeSpec returns null when no candidate responds with JSON", async () => {
+  const { server, origin } = await startServer((req, res) => {
+    res.statusCode = 404;
+    res.end("nope");
+  });
+  try {
+    assert.equal(await probeSpec(origin), null);
+  } finally {
+    server.close();
   }
 });
