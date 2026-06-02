@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { mkdtempSync, writeFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { parseEnvFiles, resolveSpecOrigin, specCandidatePaths, probeSpec, findLocalSpec } from "./fetch-spec.mjs";
+import { parseEnvFiles, resolveSpecOrigin, specCandidatePaths, probeSpec, findLocalSpec, resolveSpecInput, main } from "./fetch-spec.mjs";
 import { createServer } from "node:http";
 
 function tmpProject(files) {
@@ -116,4 +116,88 @@ test("findLocalSpec returns null when no local spec file exists", () => {
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
+});
+
+test("resolveSpecInput prefers explicit url argument", async () => {
+  const r = await resolveSpecInput({
+    cwd: "/nope",
+    explicit: "http://explicit.test/openapi.json",
+    deps: { probeSpec: async () => { throw new Error("should not probe"); } },
+  });
+  assert.deepEqual(r, { source: "explicit", input: "http://explicit.test/openapi.json" });
+});
+
+test("resolveSpecInput falls back to env probing", async () => {
+  const dir = tmpProject({ ".env": "VITE_API_URL=http://api.test\n" });
+  try {
+    const r = await resolveSpecInput({
+      cwd: dir,
+      explicit: null,
+      deps: { probeSpec: async (origin) => ({ url: `${origin}/openapi.json`, spec: {} }) },
+    });
+    assert.deepEqual(r, { source: "probe", input: "http://api.test/openapi.json" });
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("resolveSpecInput falls back to local file when probing fails", async () => {
+  const dir = tmpProject({
+    ".env": "VITE_API_URL=http://api.test\n",
+    "openapi.json": "{}",
+  });
+  try {
+    const r = await resolveSpecInput({
+      cwd: dir,
+      explicit: null,
+      deps: { probeSpec: async () => null },
+    });
+    assert.deepEqual(r, { source: "local", input: join(dir, "openapi.json") });
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("resolveSpecInput returns null source when nothing found", async () => {
+  const dir = tmpProject({});
+  try {
+    const r = await resolveSpecInput({
+      cwd: dir,
+      explicit: null,
+      deps: { probeSpec: async () => null },
+    });
+    assert.equal(r.source, null);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("main returns 1 and does not run codegen when no spec found", async () => {
+  const dir = tmpProject({});
+  let ran = false;
+  try {
+    const code = await main([], {
+      cwd: dir,
+      log: () => {},
+      run: () => { ran = true; return { status: 0 }; },
+      probeSpec: async () => null,
+    });
+    assert.equal(code, 1);
+    assert.equal(ran, false);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("main runs codegen with explicit input and returns its status", async () => {
+  let calledWith = null;
+  const code = await main(["http://x.test/openapi.json", "generated/api.ts"], {
+    cwd: "/tmp",
+    log: () => {},
+    run: (cmd, args) => { calledWith = { cmd, args }; return { status: 0 }; },
+  });
+  assert.equal(code, 0);
+  assert.equal(calledWith.cmd, "npx");
+  assert.ok(calledWith.args.includes("http://x.test/openapi.json"));
+  assert.ok(calledWith.args.includes("generated/api.ts"));
 });

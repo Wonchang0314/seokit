@@ -1,5 +1,7 @@
 import { readFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
+import { spawnSync } from "node:child_process";
+import { fileURLToPath } from "node:url";
 
 // .env 파일 후보 (뒤에 올수록 우선순위 높음 — 나중 값이 앞 값을 덮어씀)
 const ENV_FILE_ORDER = [
@@ -112,4 +114,57 @@ export function parseEnvFiles(cwd) {
     }
   }
   return merged;
+}
+
+// 입력 소스 결정: 명시 인자 → env probing → 로컬 파일
+export async function resolveSpecInput({ cwd, explicit, deps = {} }) {
+  const probe = deps.probeSpec ?? probeSpec;
+
+  if (explicit) {
+    return { source: "explicit", input: explicit };
+  }
+
+  const origin = resolveSpecOrigin(parseEnvFiles(cwd));
+  if (origin) {
+    const probed = await probe(origin);
+    if (probed) return { source: "probe", input: probed.url };
+  }
+
+  const local = findLocalSpec(cwd);
+  if (local) return { source: "local", input: local };
+
+  return { source: null, input: null };
+}
+
+// CLI 엔트리: 입력 결정 후 openapi-typescript 실행
+export async function main(argv, deps = {}) {
+  const cwd = deps.cwd ?? process.cwd();
+  const log = deps.log ?? console.error;
+  const run = deps.run ?? ((cmd, args, opts) => spawnSync(cmd, args, opts));
+
+  const explicit = argv[0] ?? null;
+  const outFile = argv[1] ?? "generated/api.ts";
+
+  const { source, input } = await resolveSpecInput({ cwd, explicit, deps });
+  if (!source) {
+    log(
+      "[fetch-spec] OpenAPI 스펙을 찾지 못했습니다. " +
+        ".env*의 API URL(예: VITE_API_URL)로 probing 실패 + 로컬 스펙 파일 부재.\n" +
+        "스펙 URL 또는 파일 경로를 첫 인자로 전달하세요: " +
+        "node scripts/fetch-spec.mjs <url|file> [outFile]",
+    );
+    return 1;
+  }
+
+  log(`[fetch-spec] source=${source} input=${input} → ${outFile}`);
+  const res = run("npx", ["-y", "openapi-typescript", input, "-o", outFile], {
+    cwd,
+    stdio: "inherit",
+  });
+  return res.status ?? 1;
+}
+
+// 직접 실행 시에만 main 구동 (import 시 부작용 없음)
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  main(process.argv.slice(2)).then((code) => process.exit(code));
 }
