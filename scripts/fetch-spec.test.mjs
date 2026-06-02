@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { mkdtempSync, writeFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { parseEnvFiles, resolveSpecOrigin } from "./fetch-spec.mjs";
+import { parseEnvFiles, resolveSpecOrigin, specCandidatePaths } from "./fetch-spec.mjs";
 
 function tmpProject(files) {
   const dir = mkdtempSync(join(tmpdir(), "fetch-spec-"));
@@ -12,6 +12,21 @@ function tmpProject(files) {
   }
   return dir;
 }
+
+test("specCandidatePaths covers known framework JSON spec endpoints", () => {
+  const paths = specCandidatePaths();
+  for (const expected of [
+    "/openapi.json",
+    "/v3/api-docs",
+    "/api-docs-json",
+    "/api-json",
+    "/swagger.json",
+    "/swagger/v1/swagger.json",
+    "/api/schema/",
+  ]) {
+    assert.ok(paths.includes(expected), `missing ${expected}`);
+  }
+});
 
 test("resolveSpecOrigin picks first candidate key by priority and returns origin", () => {
   const env = {

@@ -29,6 +29,19 @@ function parseEnvBody(body) {
   return out;
 }
 
+// 머신리더블 JSON 스펙 엔드포인트 후보 (HTML Swagger UI 아님). 순차 시도.
+export function specCandidatePaths() {
+  return [
+    "/openapi.json", // FastAPI 등 범용
+    "/v3/api-docs", // Spring springdoc
+    "/api-docs-json", // NestJS swagger
+    "/api-json", // NestJS swagger (대체)
+    "/swagger.json", // 범용
+    "/swagger/v1/swagger.json", // .NET
+    "/api/schema/", // DRF spectacular
+  ];
+}
+
 // 우선순위 순서대로 첫 존재 키 채택
 const ENV_KEY_PRIORITY = [
   "VITE_API_URL",
