@@ -42,6 +42,21 @@ export function specCandidatePaths() {
   ];
 }
 
+const LOCAL_SPEC_CANDIDATES = [
+  "openapi.json",
+  "openapi.yaml",
+  "openapi.yml",
+  "swagger.json",
+];
+
+export function findLocalSpec(cwd) {
+  for (const name of LOCAL_SPEC_CANDIDATES) {
+    const p = join(cwd, name);
+    if (existsSync(p)) return p;
+  }
+  return null;
+}
+
 async function tryJson(url, fetchImpl) {
   try {
     const res = await fetchImpl(url, { headers: { accept: "application/json" } });

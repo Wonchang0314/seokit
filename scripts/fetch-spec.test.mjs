@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { mkdtempSync, writeFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { parseEnvFiles, resolveSpecOrigin, specCandidatePaths, probeSpec } from "./fetch-spec.mjs";
+import { parseEnvFiles, resolveSpecOrigin, specCandidatePaths, probeSpec, findLocalSpec } from "./fetch-spec.mjs";
 import { createServer } from "node:http";
 
 function tmpProject(files) {
@@ -97,5 +97,23 @@ test("probeSpec returns null when no candidate responds with JSON", async () => 
     assert.equal(await probeSpec(origin), null);
   } finally {
     server.close();
+  }
+});
+
+test("findLocalSpec returns path of first existing local spec file", () => {
+  const dir = tmpProject({ "openapi.json": "{}" });
+  try {
+    assert.equal(findLocalSpec(dir), join(dir, "openapi.json"));
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("findLocalSpec returns null when no local spec file exists", () => {
+  const dir = tmpProject({ "readme.md": "x" });
+  try {
+    assert.equal(findLocalSpec(dir), null);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
   }
 });
