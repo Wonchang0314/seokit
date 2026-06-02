@@ -14,7 +14,7 @@ function tmpProject(files) {
   return dir;
 }
 
-test("specCandidatePaths covers known framework JSON spec endpoints", () => {
+test("specCandidatePaths는 알려진 프레임워크의 JSON 스펙 엔드포인트를 포함한다", () => {
   const paths = specCandidatePaths();
   for (const expected of [
     "/openapi.json",
@@ -25,11 +25,11 @@ test("specCandidatePaths covers known framework JSON spec endpoints", () => {
     "/swagger/v1/swagger.json",
     "/api/schema/",
   ]) {
-    assert.ok(paths.includes(expected), `missing ${expected}`);
+    assert.ok(paths.includes(expected), `누락된 경로: ${expected}`);
   }
 });
 
-test("resolveSpecOrigin picks first candidate key by priority and returns origin", () => {
+test("resolveSpecOrigin은 우선순위가 가장 높은 후보 키를 골라 origin을 반환한다", () => {
   const env = {
     REACT_APP_API_URL: "http://wrong.test",
     VITE_API_URL: "https://api.test:8080/v1/users?x=1",
@@ -37,15 +37,15 @@ test("resolveSpecOrigin picks first candidate key by priority and returns origin
   assert.equal(resolveSpecOrigin(env), "https://api.test:8080");
 });
 
-test("resolveSpecOrigin returns null when no candidate present", () => {
+test("resolveSpecOrigin은 후보 키가 하나도 없으면 null을 반환한다", () => {
   assert.equal(resolveSpecOrigin({ UNRELATED: "x" }), null);
 });
 
-test("resolveSpecOrigin returns null on unparseable url", () => {
+test("resolveSpecOrigin은 파싱 불가능한 URL이면 null을 반환한다", () => {
   assert.equal(resolveSpecOrigin({ VITE_API_URL: "not a url" }), null);
 });
 
-test("parseEnvFiles merges files with .local overriding base", () => {
+test("parseEnvFiles는 .local 값이 base 값을 덮어쓰도록 파일을 병합한다", () => {
   const dir = tmpProject({
     ".env": "VITE_API_URL=http://base.test\n# comment\nFOO=1\n",
     ".env.local": 'VITE_API_URL="http://local.test"\n',
@@ -69,7 +69,7 @@ function startServer(handler) {
   });
 }
 
-test("probeSpec returns first endpoint that responds with JSON spec", async () => {
+test("probeSpec는 JSON 스펙으로 응답하는 첫 엔드포인트를 반환한다", async () => {
   const { server, origin } = await startServer((req, res) => {
     if (req.url === "/v3/api-docs") {
       res.setHeader("content-type", "application/json");
@@ -88,7 +88,7 @@ test("probeSpec returns first endpoint that responds with JSON spec", async () =
   }
 });
 
-test("probeSpec returns null when no candidate responds with JSON", async () => {
+test("probeSpec는 어떤 후보도 JSON으로 응답하지 않으면 null을 반환한다", async () => {
   const { server, origin } = await startServer((req, res) => {
     res.statusCode = 404;
     res.end("nope");
@@ -100,7 +100,7 @@ test("probeSpec returns null when no candidate responds with JSON", async () => 
   }
 });
 
-test("findLocalSpec returns path of first existing local spec file", () => {
+test("findLocalSpec는 존재하는 첫 로컬 스펙 파일의 경로를 반환한다", () => {
   const dir = tmpProject({ "openapi.json": "{}" });
   try {
     assert.equal(findLocalSpec(dir), join(dir, "openapi.json"));
@@ -109,7 +109,7 @@ test("findLocalSpec returns path of first existing local spec file", () => {
   }
 });
 
-test("findLocalSpec returns null when no local spec file exists", () => {
+test("findLocalSpec는 로컬 스펙 파일이 없으면 null을 반환한다", () => {
   const dir = tmpProject({ "readme.md": "x" });
   try {
     assert.equal(findLocalSpec(dir), null);
@@ -118,7 +118,7 @@ test("findLocalSpec returns null when no local spec file exists", () => {
   }
 });
 
-test("resolveSpecInput prefers explicit url argument", async () => {
+test("resolveSpecInput는 명시적 url 인자를 가장 우선한다", async () => {
   const r = await resolveSpecInput({
     cwd: "/nope",
     explicit: "http://explicit.test/openapi.json",
@@ -127,7 +127,7 @@ test("resolveSpecInput prefers explicit url argument", async () => {
   assert.deepEqual(r, { source: "explicit", input: "http://explicit.test/openapi.json" });
 });
 
-test("resolveSpecInput falls back to env probing", async () => {
+test("resolveSpecInput는 명시 인자가 없으면 env probing으로 fallback한다", async () => {
   const dir = tmpProject({ ".env": "VITE_API_URL=http://api.test\n" });
   try {
     const r = await resolveSpecInput({
@@ -141,7 +141,7 @@ test("resolveSpecInput falls back to env probing", async () => {
   }
 });
 
-test("resolveSpecInput falls back to local file when probing fails", async () => {
+test("resolveSpecInput는 probing이 실패하면 로컬 파일로 fallback한다", async () => {
   const dir = tmpProject({
     ".env": "VITE_API_URL=http://api.test\n",
     "openapi.json": "{}",
@@ -158,7 +158,7 @@ test("resolveSpecInput falls back to local file when probing fails", async () =>
   }
 });
 
-test("resolveSpecInput returns null source when nothing found", async () => {
+test("resolveSpecInput는 아무것도 못 찾으면 source가 null이다", async () => {
   const dir = tmpProject({});
   try {
     const r = await resolveSpecInput({
@@ -172,7 +172,7 @@ test("resolveSpecInput returns null source when nothing found", async () => {
   }
 });
 
-test("main returns 1 and does not run codegen when no spec found", async () => {
+test("main은 스펙을 못 찾으면 codegen을 실행하지 않고 1을 반환한다", async () => {
   const dir = tmpProject({});
   let ran = false;
   try {
@@ -189,7 +189,7 @@ test("main returns 1 and does not run codegen when no spec found", async () => {
   }
 });
 
-test("main runs codegen with explicit input and returns its status", async () => {
+test("main은 명시 입력으로 codegen을 실행하고 그 상태 코드를 반환한다", async () => {
   let calledWith = null;
   const code = await main(["http://x.test/openapi.json", "generated/api.ts"], {
     cwd: "/tmp",
@@ -203,7 +203,7 @@ test("main runs codegen with explicit input and returns its status", async () =>
 });
 
 // Fix 1: 상위 우선순위 키가 유효하지 않은 URL이어도 하위 후보에서 유효한 값을 반환해야 함
-test("resolveSpecOrigin falls through to next key when higher-priority key has unparseable URL", () => {
+test("resolveSpecOrigin은 상위 우선순위 키의 URL이 파싱 불가하면 다음 키로 넘어간다", () => {
   const env = {
     VITE_API_URL: "not-a-url",
     NEXT_PUBLIC_API_URL: "http://api.test",
@@ -212,7 +212,7 @@ test("resolveSpecOrigin falls through to next key when higher-priority key has u
 });
 
 // Fix 2: openapi/swagger 키가 없는 JSON 응답은 스펙으로 인정하지 않아야 함
-test("probeSpec returns null when all endpoints respond with non-spec JSON", async () => {
+test("probeSpec는 모든 엔드포인트가 스펙이 아닌 JSON을 반환하면 null을 반환한다", async () => {
   const { server, origin } = await startServer((req, res) => {
     res.setHeader("content-type", "application/json");
     res.end(JSON.stringify({ status: "ok" }));
