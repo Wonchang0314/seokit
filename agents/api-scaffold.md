@@ -90,6 +90,32 @@ api 패키지 `package.json`의 `scripts`에서 우선순위 매칭: `gen:api` �
 
 ---
 
+## §0-A. Phase A — 스펙 탐색·generated 생성 (결정적)
+
+generated 파일이 **부재**하거나 사용자가 "최신 스펙으로 재생성"을 요청하면 수행한다.
+이 단계는 LLM 추론이 아니라 플러그인 동봉 스크립트를 Bash로 실행하는 결정적 절차다.
+
+1. **의존성 체크**: 대상 프로젝트(api 패키지)에 `openapi-typescript` 설치 여부 확인
+   (`package.json`의 devDependencies / `npx openapi-typescript --version`).
+   - 미설치 → `AskUserQuestion`으로 승인받고 `$PM add -D openapi-typescript` +
+     `package.json` `scripts`에 `gen:api` 추가. 승인 없으면 중단.
+2. **스펙 입력 결정·생성**: 다음을 실행한다.
+   ```
+   node "${CLAUDE_PLUGIN_ROOT}/scripts/fetch-spec.mjs" "" "<generatedFile>"
+   ```
+   스크립트가 `.env*`의 API URL(`VITE_API_URL` 등)로 JSON 스펙 엔드포인트를 probing하고,
+   실패 시 로컬 스펙 파일로 fallback해 `openapi-typescript`로 generated 파일을 산출한다.
+3. **스펙 미발견(exit 1)**: 스크립트가 URL/경로를 못 찾으면 stderr 안내를 그대로 전달하고
+   `AskUserQuestion`으로 스펙 URL 또는 파일 경로를 받아 첫 인자로 재실행한다.
+   ```
+   node "${CLAUDE_PLUGIN_ROOT}/scripts/fetch-spec.mjs" "<url|file>" "<generatedFile>"
+   ```
+4. **백엔드 미기동 가정 처리**: probing은 백엔드가 실행 중일 때만 성공한다. 연결 실패가
+   원인으로 보이면 "백엔드 기동 후 재시도 / 로컬 스펙 파일 경로 제공" 중 택하도록 안내한다.
+5. `generated/`는 git 추적 상태를 유지한다(§3 증분 diff의 기준).
+
+---
+
 ## §1. 핵심 원칙
 
 - **전체 재생성 금지**: 기존 도메인 파일을 통째로 덮어쓰지 않는다. 사람이 추가한 커스텀 훅·타입·주석·정렬을 보존.
