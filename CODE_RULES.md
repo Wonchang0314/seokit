@@ -78,20 +78,6 @@ useEffect(function fetchUserOnIdChange() {
 
 **이름 규칙**: 동사 + 대상 + 조건(선택). 예: `createMapInstance`, `swapTileLayers`, `syncPolygonFeatures`, `bindPointerHandlers`, `fetchUserOnIdChange`.
 
-#### 3.1.3 Props 타입은 `interface` `[lint: @typescript-eslint/consistent-type-definitions]`
-
-컴포넌트 Props 타입은 `interface ComponentNameProps` 형식으로 정의한다.
-
-```tsx
-interface ProfileCardProps {
-  user: User
-  variant?: 'compact' | 'full'
-  onSelect?: (id: string) => void
-}
-```
-
-**왜**: 선언 병합 가능, 더 명확한 IDE hover 표시, 라이브러리 타입 확장 패턴과 일관.
-
 ---
 
 ### 3.2 상태 관리
@@ -251,33 +237,7 @@ function useDeleteUser() {
 
 slot 별 책임 분리, prop 인터페이스 평탄화 효과.
 
-#### 3.3.2 애플리케이션 코드는 파일 분리 + Named Export `[lint: import/no-default-export]`
-
-애플리케이션 레벨 컴포넌트는 한 파일당 하나의 책임으로 분리하고, default export 대신 **named export** 만 사용한다.
-
-❌
-```tsx
-// UserPage.tsx
-export default function UserPage() { ... }
-function UserSidebar() { ... }
-function UserMain() { ... }
-```
-
-✅
-```tsx
-// UserPage.tsx
-export function UserPage() { ... }
-
-// UserSidebar.tsx
-export function UserSidebar() { ... }
-
-// UserMain.tsx
-export function UserMain() { ... }
-```
-
-**왜**: rename refactor 안전, import 자동완성 일관, lazy/dynamic import 시에도 명시적.
-
-#### 3.3.3 임포트 정렬 `[lint: import/order]`
+#### 3.3.2 임포트 정렬 `[review-only]`
 
 `builtin → external → internal → parent → sibling` 순서, 그룹 사이 빈 줄.
 
@@ -361,14 +321,11 @@ function UserList({ onUserSelect }: UserListProps) {
 | 카테고리 | 표준/커스텀 룰 | 위치 |
 |---|---|---|
 | useEffect named function | `local/useeffect-named-function` (커스텀) | §3.1.2 |
-| Props 는 `interface` | `@typescript-eslint/consistent-type-definitions` | §3.1.3 |
-| Named export only | `import/no-default-export` | §3.3.2 |
-| 임포트 정렬 | `import/order` | §3.3.3 |
 
-v0.1부터 lint 자동화는 seokit Claude plugin의 **PostToolUse hook**이 담당한다 — `.ts`/`.tsx` Edit/Write 직후 hook이 **설치처 ESLint**를 실행해 `[lint:]` 룰을 결정적으로 차단한다(모델 판단 안 끼어듦).
+v0.1부터 lint 자동화는 seokit Claude plugin의 **PostToolUse hook**이 담당한다 — `.ts`/`.tsx` Edit/Write 직후 hook(`hooks/lint-check.mjs`)이 **설치처 ESLint**를 실행해 위 표의 `[lint:]` 룰(현재 `local/useeffect-named-function` 1개)을 결정적으로 차단한다(`decision:block`, 모델 판단 안 끼어듦).
 
-- **동봉 위치**: 플러그인의 `eslint/seokit.config.js`(flat config) + `eslint/rules/useeffect-named-function.js`(커스텀 룰 — 표준 룰엔 없어 직접 작성). 위 표의 표준 룰은 `@typescript-eslint`/`import`/`react-hooks`/`jsx-a11y`에서 가져온다.
-- **전제조건**: ESLint 런타임은 설치처 `node_modules`에 있어야 한다. 미설치 시 hook은 통과하고 **review-only 폴백**(skill만 동작).
+- **동봉 위치**: 플러그인의 `eslint/seokit.config.js`(enforce 룰 선언) + `eslint/rules/useeffect-named-function.js`(커스텀 룰 — 표준 룰엔 없어 직접 작성).
+- **전제조건**: 설치처 `node_modules`에 `eslint`(9, flat config) + `@typescript-eslint/parser`. 미설치 시 hook은 통과하고 **review-only 폴백**(skill만 동작).
 - **`[review-only]` 룰**: ESLint로 검증 불가. seokit-rules skill의 셀프 점검이 담당하며 결정적 차단 대상이 아니다.
 
 운영·디버깅(전제조건, 트러블슈팅)은 README의 "Lint 강제 / 트러블슈팅" 절 참조.

@@ -1,0 +1,18 @@
+{
+  "description": "seokit lint enforcement — PostToolUse 가 .ts/.tsx 편집 직후 설치처 ESLint 로 enforce 룰을 하드 차단",
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "command -v node >/dev/null 2>&1 && node \"${CLAUDE_PLUGIN_ROOT}/hooks/lint-check.mjs\" || exit 0",
+            "commandWindows": "if (Get-Command node -ErrorAction SilentlyContinue) { node \"$env:CLAUDE_PLUGIN_ROOT\\hooks\\lint-check.mjs\" }",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}
