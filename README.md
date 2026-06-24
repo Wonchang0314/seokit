@@ -8,8 +8,24 @@ Wonchang의 **프론트엔드 개발 환경** — Claude Code marketplace 형태
 
 | 구성요소             | 무엇                                                                        | 발동                                              |
 | -------------------- | --------------------------------------------------------------------------- | ------------------------------------------------- |
-| `seokit-rules` skill | React/TS 코드 규약(CODE_RULES.md §3 MUST + §5 agent contract) 자동 강제      | `.ts`/`.tsx` 작성·수정 시 자동 호출               |
+| `seokit-rules` skill | React/TS 코드 규약(CODE_RULES.md §3 MUST) 자동 강제                          | `.ts`/`.tsx` 작성·수정 시 자동 호출               |
 | `api-scaffold` agent | openapi-typescript 산출물 변경분을 도메인 파일에 수술적 반영                 | openapi-typescript + TanStack Query 스택에서 호출 |
+| lint 강제 hook       | CODE_RULES §3 `[lint:]` 룰을 설치처 ESLint로 결정적 차단                     | `.ts`/`.tsx` Edit/Write 후 PostToolUse 자동 실행  |
+
+> **두 층의 강제**: skill은 모든 룰(`[review-only]` 포함)을 모델 컨텍스트에 주입하지만 준수는 모델 판단에 의존(비결정적). lint hook은 `[lint:]` 9개에 한해 ESLint로 결정적 차단(모델 판단 안 끼어듦). `[review-only]` 다수는 본질적으로 도구 불가 — seokit-rules skill의 셀프 점검 담당.
+
+## Lint 강제 — 전제조건
+
+PostToolUse lint hook은 **설치처 프로젝트의 ESLint를 실행**한다. 플러그인은 config·커스텀룰만 동봉(`${CLAUDE_PLUGIN_ROOT}/eslint/`), ESLint 런타임은 설치처 `node_modules`에 있어야 한다.
+
+- 필요: 설치처에 `eslint` + `@typescript-eslint/parser` 설치.
+- 미설치 시: hook은 조용히 통과하고 **review-only 폴백**(skill만 동작). 빌드 깨지지 않음.
+
+## 트러블슈팅 (lint hook)
+
+- **lint 차단이 안 됨** → 설치처 `node_modules/.bin/eslint` 존재 확인. 없으면 폴백 모드.
+- **커스텀룰(`useeffect-named-function`)이 안 잡힘** → flat config에 `${CLAUDE_PLUGIN_ROOT}/eslint/rules/`의 플러그인 등록됐는지 확인.
+- **룰↔코드 매핑이 헷갈림** → CODE_RULES.md 부록 A의 lint 매핑 표가 단일 출처.
 
 ## Marketplace 등록 (한 번)
 
@@ -50,7 +66,10 @@ seokit/                                  ← 이 repo = marketplace + 단일 plu
 │   └── plugin.json                      ← seokit-frontend 매니페스트 (version 없음 = 커밋 SHA 기반)
 ├── CODE_RULES.md                        ← React/TS 규칙 (SSOT)
 ├── skills/seokit-rules/SKILL.md         ← 자동 호출 규칙 스킬
-└── agents/api-scaffold.md               ← API 스캐폴딩 에이전트
+├── agents/api-scaffold.md               ← API 스캐폴딩 에이전트
+└── eslint/                              ← lint hook용 flat config + 커스텀룰 (설치처 ESLint가 로드)
+    ├── seokit.config.js                 ← 동봉 flat config
+    └── rules/useeffect-named-function.js ← 커스텀 룰 (표준 룰엔 없음)
 ```
 
 ## 업데이트 반영

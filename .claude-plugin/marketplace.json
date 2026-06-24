@@ -9,7 +9,7 @@
   "plugins": [
     {
       "name": "seokit-frontend",
-      "description": "Auto-invoked React/TypeScript code-convention enforcement (CODE_RULES.md §3 MUST + §5 agent contract) plus the api-scaffold agent for openapi-typescript + TanStack Query projects.",
+      "description": "Auto-invoked React/TypeScript code-convention enforcement (CODE_RULES.md §3 MUST) plus the api-scaffold agent for openapi-typescript + TanStack Query projects.",
       "author": {
         "name": "Wonchang Seok",
         "email": "developerseok@gmail.com"
