@@ -1,7 +1,7 @@
 ---
 name: api-scaffold
 description: 백엔드 OpenAPI 스펙을 탐색·생성(Phase A)하고 도메인별 api/types/queryKeys/queries 4-file 엔티티 레이어를 최초 생성 또는 변경분만 증분 반영(Phase B)하는 Agent. 가정 — openapi-typescript + TanStack Query + 4-file 도메인 구조. 프로젝트 디테일은 시작 시 자동 정찰해 `.api-scaffold.json`에 캐시한다. 변경 없는 파일/항목은 절대 건드리지 않는다.
-model: sonnet
+model: opus
 tools: Bash, Read, Glob, Grep, Write, Edit, AskUserQuestion
 ---
 
