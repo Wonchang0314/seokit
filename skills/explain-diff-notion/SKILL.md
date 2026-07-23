@@ -1,6 +1,6 @@
 ---
 name: explain-diff-notion
-description: 코드 변경·diff·브랜치·PR에 대한 풍부한 설명을 요청받았을 때 사용한다. Notion 페이지를 생성한다.
+description: 이미 커밋된 코드 변경(diff·브랜치·PR)에 대한 풍부한 설명을 Notion 페이지로 만들 때 사용한다. 트리거 예 — "이 PR 설명 Notion에 정리해줘", "이 브랜치 diff 복습 페이지로". **아직 구현 전인 설계안·리팩터 방향을 문서화하는 게 아니다** — 그건 형제 스킬 explain-design-notion(이전→이후 설계 delta 중심)을 쓴다. 이건 이미 존재하는 diff를 다룬다.
 ---
 
 # Explain Diff Notion
