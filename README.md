@@ -10,7 +10,7 @@ Claude Code에서 쓰는 내 작업 흐름을 플러그인 하나로 묶었다.
 - 수정: 원인 확인 → 실패 테스트 → 수정 → 검증 → `update-docs`
 - Edit·Write로 코드 파일을 고치면 훅이 기록해 두고, 끝내기 전에 문서 점검을 한 번 요구한다. 문서·테스트 파일은 세지 않는다.
 
-훅은 레포에 `.claude/docs-map.md`(어떤 코드가 어떤 문서와 짝인지 적은 표)가 있을 때만 켜진다. 예전 방식인 `.claude/skills/update-docs/SKILL.md`도 인정한다.
+훅은 레포에 `.claude/docs-map.md`(어떤 코드가 어떤 문서와 짝인지 적은 표)가 있을 때만 켜진다. 예전 방식인 `.claude/skills/update-docs/SKILL.md`도 인정한다. 이 파일은 `/seokit-frontend:init` 으로 만든다.
 
 ## 설치
 
@@ -18,6 +18,8 @@ Claude Code에서 쓰는 내 작업 흐름을 플러그인 하나로 묶었다.
 /plugin marketplace add Wonchang0314/seokit
 /plugin install seokit-frontend@frontend-development-plugin
 ```
+
+그다음 쓰려는 프로젝트에서 `/seokit-frontend:init` 을 실행한다. 레포를 조사해 `.claude/docs-map.md` 초안을 보여 주고, 확인받으면 git 최상위 폴더에 쓴다. 쓴 파일은 커밋한다(커밋하지 않으면 워크트리에서는 훅이 꺼진다).
 
 업데이트는 `/plugin marketplace update frontend-development-plugin` 뒤 `/plugin update seokit-frontend`.
 
@@ -31,6 +33,7 @@ seokit/
 ├── .claude/docs-map.md         이 레포의 코드↔문서 대응표
 ├── workflow.md                 작업 흐름. opt-in 레포에선 세션 시작 때 주입된다
 ├── skills/
+│   ├── init/SKILL.md           레포를 조사해 docs-map.md 를 만든다 (사용자가 직접 호출)
 │   ├── tdd/
 │   │   ├── SKILL.md            RED-GREEN-REFACTOR 절차
 │   │   └── writing-good-tests.md  좋은 테스트의 두 원칙과 돌연변이 점검
