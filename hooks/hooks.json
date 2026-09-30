@@ -1,14 +1,35 @@
 {
-  "description": "seokit lint enforcement — PostToolUse 가 .ts/.tsx 편집 직후 설치처 ESLint 로 enforce 룰을 하드 차단",
+  "description": "seokit 워크플로우 — 세션 시작 시 작업 흐름 주입, 코드 수정 기록, 종료 전 update-docs 강제 (.claude/docs-map.md 또는 옛 .claude/skills/update-docs/SKILL.md 가 있는 레포만)",
   "hooks": {
-    "PostToolUse": [
+    "SessionStart": [
       {
-        "matcher": "Edit|Write|MultiEdit",
         "hooks": [
           {
             "type": "command",
-            "command": "command -v node >/dev/null 2>&1 && node \"${CLAUDE_PLUGIN_ROOT}/hooks/lint-check.mjs\" || exit 0",
-            "commandWindows": "if (Get-Command node -ErrorAction SilentlyContinue) { node \"$env:CLAUDE_PLUGIN_ROOT\\hooks\\lint-check.mjs\" }",
+            "command": "command -v node >/dev/null 2>&1 && node \"${CLAUDE_PLUGIN_ROOT}/hooks/session-start.mjs\" || exit 0",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit|NotebookEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "command -v node >/dev/null 2>&1 && node \"${CLAUDE_PLUGIN_ROOT}/hooks/update-docs-track.mjs\" || exit 0",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "command -v node >/dev/null 2>&1 && node \"${CLAUDE_PLUGIN_ROOT}/hooks/update-docs-gate.mjs\" || exit 0",
             "timeout": 10
           }
         ]

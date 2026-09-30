@@ -1,7 +1,7 @@
 {
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "frontend-development-plugin",
-  "description": "Wonchang's frontend development harness for Claude Code — a single plugin bundling code-convention enforcement and API scaffolding.",
+  "description": "Wonchang's frontend development harness for Claude Code — a single plugin bundling a TDD + docs-alignment workflow and API scaffolding.",
   "owner": {
     "name": "Wonchang Seok",
     "email": "developerseok@gmail.com"
@@ -9,12 +9,12 @@
   "plugins": [
     {
       "name": "seokit-frontend",
-      "description": "Auto-invoked React/TypeScript code-convention enforcement (CODE_RULES.md §3 MUST) plus the api-scaffold agent for openapi-typescript + TanStack Query projects.",
+      "description": "TDD workflow with hooks that keep code and docs aligned, plus the api-scaffold agent for openapi-typescript + TanStack Query projects.",
       "author": {
         "name": "Wonchang Seok",
         "email": "developerseok@gmail.com"
       },
-      "category": "code-quality",
+      "category": "development",
       "source": "./",
       "homepage": "https://github.com/Wonchang0314/seokit"
     }
