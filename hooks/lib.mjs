@@ -1,4 +1,4 @@
-// update-docs 훅 공용: opt-in 판정, 코드 파일 판정, 상태 파일 위치.
+// 훅 공용: opt-in 판정, 코드 파일 판정, 상태 파일 위치.
 import { existsSync, readFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, extname, join } from "node:path";

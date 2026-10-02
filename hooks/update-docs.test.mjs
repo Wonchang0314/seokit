@@ -180,3 +180,73 @@ test("session-start: opt-in 이 아니면 아무것도 출력하지 않는다", 
   assert.equal(res.code, 0);
   assert.equal(res.stdout, "");
 });
+
+test("session-start: 질문 방식 규칙(SessionStart.md)도 함께 넣는다", () => {
+  const root = tmpRepo();
+  const out = JSON.parse(run("session-start.mjs", { cwd: root }, newStateDir()).stdout);
+  assert.ok(out.hookSpecificOutput.additionalContext.includes("# 질문 방식"));
+  assert.ok(out.hookSpecificOutput.additionalContext.includes("## 신규 기능"));
+});
+
+test("session-start: 주입 내용이 additionalContext 상한(10,000자) 안에 든다", () => {
+  const root = tmpRepo();
+  const out = JSON.parse(run("session-start.mjs", { cwd: root }, newStateDir()).stdout);
+  assert.ok(out.hookSpecificOutput.additionalContext.length < 10000);
+});
+
+// ── no-recommended-option ──
+
+function ask(root, options) {
+  const input = { cwd: root, tool_name: "AskUserQuestion", tool_input: { questions: [{ question: "q?", header: "h", options }] } };
+  return run("no-recommended-option.mjs", input, newStateDir());
+}
+
+test("no-recommended-option: 라벨에 (Recommended) 가 있으면 호출을 막고 이유를 돌려준다", () => {
+  const res = ask(tmpRepo(), [{ label: "Zustand (Recommended)", description: "a" }, { label: "Context", description: "b" }]);
+  const out = JSON.parse(res.stdout).hookSpecificOutput;
+  assert.equal(out.hookEventName, "PreToolUse");
+  assert.equal(out.permissionDecision, "deny");
+  assert.ok(out.permissionDecisionReason.includes("추천"));
+});
+
+test("no-recommended-option: (추천)·[권장]·대소문자·설명 안의 표시도 막는다", () => {
+  for (const option of [
+    { label: "A안 (추천)", description: "" },
+    { label: "A안 [권장]", description: "" },
+    { label: "A (recommended)", description: "" },
+    { label: "A안（추천）", description: "" },
+    { label: "A안", description: "(추천) 가장 단순하다" },
+  ]) {
+    const res = ask(tmpRepo(), [option, { label: "B안", description: "" }]);
+    assert.equal(JSON.parse(res.stdout).hookSpecificOutput.permissionDecision, "deny", JSON.stringify(option));
+  }
+});
+
+test("no-recommended-option: 추천 표시가 없으면 아무것도 출력하지 않는다", () => {
+  const res = ask(tmpRepo(), [{ label: "진행", description: "" }, { label: "논의", description: "" }]);
+  assert.equal(res.code, 0);
+  assert.equal(res.stdout, "");
+});
+
+test("no-recommended-option: 괄호 표시가 아닌 일반 단어 '추천'은 막지 않는다", () => {
+  const res = ask(tmpRepo(), [
+    { label: "추천 피드부터", description: "recommended items API 를 먼저 붙인다" },
+    { label: "검색부터", description: "" },
+  ]);
+  assert.equal(res.stdout, "");
+});
+
+test("no-recommended-option: opt-in 이 아닌 레포에서는 막지 않는다", () => {
+  const res = ask(tmpRepo({ optIn: null }), [{ label: "A (Recommended)", description: "" }, { label: "B", description: "" }]);
+  assert.equal(res.code, 0);
+  assert.equal(res.stdout, "");
+});
+
+test("no-recommended-option: 깨진 입력·빠진 필드에도 0 으로 끝나고 막지 않는다", () => {
+  const root = tmpRepo();
+  for (const input of ["not json", { cwd: root }, { cwd: root, tool_input: { questions: [{ question: "q?" }, null] } }]) {
+    const res = run("no-recommended-option.mjs", input, newStateDir());
+    assert.equal(res.code, 0);
+    assert.equal(res.stdout, "");
+  }
+});

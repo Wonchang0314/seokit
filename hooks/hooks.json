@@ -1,5 +1,5 @@
 {
-  "description": "seokit 워크플로우 — 세션 시작 시 작업 흐름 주입, 코드 수정 기록, 종료 전 update-docs 강제 (.claude/docs-map.md 또는 옛 .claude/skills/update-docs/SKILL.md 가 있는 레포만)",
+  "description": "seokit 워크플로우 — 세션 시작 시 작업 흐름·질문 방식 주입, 추천 표시가 붙은 선택지 질문 차단, 코드 수정 기록, 종료 전 update-docs 강제 (.claude/docs-map.md 또는 옛 .claude/skills/update-docs/SKILL.md 가 있는 레포만)",
   "hooks": {
     "SessionStart": [
       {
@@ -7,6 +7,18 @@
           {
             "type": "command",
             "command": "command -v node >/dev/null 2>&1 && node \"${CLAUDE_PLUGIN_ROOT}/hooks/session-start.mjs\" || exit 0",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "AskUserQuestion",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "command -v node >/dev/null 2>&1 && node \"${CLAUDE_PLUGIN_ROOT}/hooks/no-recommended-option.mjs\" || exit 0",
             "timeout": 10
           }
         ]
