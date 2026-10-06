@@ -171,7 +171,7 @@ test("session-start: opt-in 레포면 작업 흐름을 additionalContext 로 넣
   const out = JSON.parse(run("session-start.mjs", { cwd: join(root) }, newStateDir()).stdout);
   assert.equal(out.hookSpecificOutput.hookEventName, "SessionStart");
   assert.ok(out.hookSpecificOutput.additionalContext.includes("## 신규 기능"));
-  assert.ok(out.hookSpecificOutput.additionalContext.includes("update-docs"));
+  assert.ok(out.hookSpecificOutput.additionalContext.includes("# 질문 방식"));
 });
 
 test("session-start: opt-in 이 아니면 아무것도 출력하지 않는다", () => {
@@ -194,14 +194,14 @@ test("session-start: 주입 내용이 additionalContext 상한(10,000자) 안에
   assert.ok(out.hookSpecificOutput.additionalContext.length < 10000);
 });
 
-// ── no-recommended-option ──
+// ── ask-user-question ──
 
 function ask(root, options) {
   const input = { cwd: root, tool_name: "AskUserQuestion", tool_input: { questions: [{ question: "q?", header: "h", options }] } };
-  return run("no-recommended-option.mjs", input, newStateDir());
+  return run("ask-user-question.mjs", input, newStateDir());
 }
 
-test("no-recommended-option: 라벨에 (Recommended) 가 있으면 호출을 막고 이유를 돌려준다", () => {
+test("ask-user-question: 라벨에 (Recommended) 가 있으면 호출을 막고 이유를 돌려준다", () => {
   const res = ask(tmpRepo(), [{ label: "Zustand (Recommended)", description: "a" }, { label: "Context", description: "b" }]);
   const out = JSON.parse(res.stdout).hookSpecificOutput;
   assert.equal(out.hookEventName, "PreToolUse");
@@ -209,7 +209,7 @@ test("no-recommended-option: 라벨에 (Recommended) 가 있으면 호출을 막
   assert.ok(out.permissionDecisionReason.includes("추천"));
 });
 
-test("no-recommended-option: (추천)·[권장]·대소문자·설명 안의 표시도 막는다", () => {
+test("ask-user-question: (추천)·[권장]·대소문자·설명 안의 표시도 막는다", () => {
   for (const option of [
     { label: "A안 (추천)", description: "" },
     { label: "A안 [권장]", description: "" },
@@ -222,30 +222,65 @@ test("no-recommended-option: (추천)·[권장]·대소문자·설명 안의 표
   }
 });
 
-test("no-recommended-option: 추천 표시가 없으면 아무것도 출력하지 않는다", () => {
-  const res = ask(tmpRepo(), [{ label: "진행", description: "" }, { label: "논의", description: "" }]);
+const FOUR = ["A", "B", "C", "D"].map((label) => ({ label, description: `${label} 설명` }));
+
+test("ask-user-question: 추천 표시가 없으면 막지 않고 선택지만 섞은 입력을 'ask' 로 돌려준다", () => {
+  const root = tmpRepo();
+  const input = {
+    cwd: root,
+    tool_name: "AskUserQuestion",
+    tool_input: {
+      questions: [
+        { question: "q1?", header: "h1", multiSelect: false, options: FOUR },
+        { question: "q2?", header: "h2", multiSelect: true, options: FOUR.slice(0, 2) },
+      ],
+    },
+  };
+  const res = run("ask-user-question.mjs", input, newStateDir());
   assert.equal(res.code, 0);
-  assert.equal(res.stdout, "");
+  const out = JSON.parse(res.stdout).hookSpecificOutput;
+  assert.equal(out.hookEventName, "PreToolUse");
+  // allow 는 질문 UI 를 건너뛰고 빈 답을 돌려주는 사례가 있어(anthropics/claude-code#12672) ask 만 쓴다
+  assert.equal(out.permissionDecision, "ask");
+  const qs = out.updatedInput.questions;
+  assert.equal(qs.length, 2);
+  qs.forEach((q, i) => {
+    const orig = input.tool_input.questions[i];
+    assert.deepEqual({ ...q, options: undefined }, { ...orig, options: undefined });
+    const byLabel = (a, b) => a.label.localeCompare(b.label);
+    assert.deepEqual([...q.options].sort(byLabel), [...orig.options].sort(byLabel));
+  });
 });
 
-test("no-recommended-option: 괄호 표시가 아닌 일반 단어 '추천'은 막지 않는다", () => {
+test("ask-user-question: 실행할 때마다 첫 선택지가 바뀐다", () => {
+  const root = tmpRepo();
+  const firsts = new Set();
+  for (let i = 0; i < 20; i++) {
+    firsts.add(JSON.parse(ask(root, FOUR).stdout).hookSpecificOutput.updatedInput.questions[0].options[0].label);
+  }
+  assert.ok(firsts.size > 1, `첫 선택지가 항상 ${[...firsts]}`);
+});
+
+test("ask-user-question: 괄호 표시가 아닌 일반 단어 '추천'은 막지 않는다", () => {
   const res = ask(tmpRepo(), [
     { label: "추천 피드부터", description: "recommended items API 를 먼저 붙인다" },
     { label: "검색부터", description: "" },
   ]);
-  assert.equal(res.stdout, "");
+  assert.equal(JSON.parse(res.stdout).hookSpecificOutput.permissionDecision, "ask");
 });
 
-test("no-recommended-option: opt-in 이 아닌 레포에서는 막지 않는다", () => {
-  const res = ask(tmpRepo({ optIn: null }), [{ label: "A (Recommended)", description: "" }, { label: "B", description: "" }]);
-  assert.equal(res.code, 0);
-  assert.equal(res.stdout, "");
+test("ask-user-question: opt-in 이 아닌 레포에서는 막지도 섞지도 않는다", () => {
+  for (const options of [[{ label: "A (Recommended)", description: "" }, { label: "B", description: "" }], FOUR]) {
+    const res = ask(tmpRepo({ optIn: null }), options);
+    assert.equal(res.code, 0);
+    assert.equal(res.stdout, "");
+  }
 });
 
-test("no-recommended-option: 깨진 입력·빠진 필드에도 0 으로 끝나고 막지 않는다", () => {
+test("ask-user-question: 깨진 입력·빠진 필드에도 0 으로 끝나고 아무것도 출력하지 않는다", () => {
   const root = tmpRepo();
   for (const input of ["not json", { cwd: root }, { cwd: root, tool_input: { questions: [{ question: "q?" }, null] } }]) {
-    const res = run("no-recommended-option.mjs", input, newStateDir());
+    const res = run("ask-user-question.mjs", input, newStateDir());
     assert.equal(res.code, 0);
     assert.equal(res.stdout, "");
   }

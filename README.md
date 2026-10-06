@@ -9,7 +9,7 @@ Claude Code에서 쓰는 내 작업 흐름을 플러그인 하나로 묶었다.
 - 신규 기능: plan 모드로 설계 합의 → 명세 작성 → `tdd`로 개발 → 검증 → `update-docs`
 - 수정: 원인 확인 → 실패 테스트 → 수정 → 검증 → `update-docs`
 - Edit·Write로 코드 파일을 고치면 훅이 기록해 두고, 끝내기 전에 문서 점검을 한 번 요구한다. 문서·테스트 파일은 세지 않는다.
-- 설계 판단이 걸린 질문은 선택지 없이 열린 질문으로 받는다(`SessionStart.md`). 선택지 질문(AskUserQuestion)의 라벨이나 설명에 `(추천)`·`(Recommended)`·`[권장]` 같은 괄호 표시가 붙으면 훅이 호출을 막는다. 본문에 쓰는 추천은 훅이 못 막고 규칙으로만 유도한다.
+- 선택지 질문(AskUserQuestion)의 라벨이나 설명에 `(추천)`·`(Recommended)`·`[권장]` 같은 괄호 표시가 붙으면 훅이 호출을 막는다. 표시가 없으면 같은 훅이 선택지 순서를 매번 섞는다. 모델이 선호하는 안을 첫 번째에 두는 버릇을 지우기 위해서다. 섞은 질문은 `allow` 가 아니라 `ask` 로 넘긴다(`allow` 면 질문 화면 없이 빈 답이 돌아온 사례가 있다, anthropics/claude-code#12672). 본문에 쓰는 추천은 훅이 못 막고 규칙(`SessionStart.md`)으로만 유도한다.
 
 훅은 레포에 `.claude/docs-map.md`(어떤 코드가 어떤 문서와 짝인지 적은 표)가 있을 때만 켜진다. 예전 방식인 `.claude/skills/update-docs/SKILL.md`도 인정한다. 이 파일은 `/seokit-frontend:init` 으로 만든다.
 
@@ -46,7 +46,7 @@ seokit/
 │   ├── hooks.json              훅 배선
 │   ├── lib.mjs                 opt-in 판정, 코드 파일 판정, 상태 파일 위치
 │   ├── session-start.mjs       SessionStart: workflow.md + SessionStart.md 주입
-│   ├── no-recommended-option.mjs  PreToolUse(AskUserQuestion): 추천 표시가 붙은 선택지 질문 차단
+│   ├── ask-user-question.mjs   PreToolUse(AskUserQuestion): 추천 표시가 붙은 질문 차단, 없으면 선택지 순서 섞기
 │   ├── update-docs-track.mjs   PostToolUse: 고친 코드 파일 기록
 │   ├── update-docs-gate.mjs    Stop: 기록이 있으면 한 번 막고 update-docs 요구
 │   └── update-docs.test.mjs    훅 테스트
