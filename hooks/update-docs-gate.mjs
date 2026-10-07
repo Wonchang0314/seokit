@@ -1,6 +1,7 @@
 // Stop: '문서 점검 대기'에 코드 파일이 있으면 종료를 한 번 막고 update-docs 실행을 지시한다.
 // 막는 즉시 대기 목록을 비우므로 같은 수정으로 두 번 막지 않는다(무한 반복 방지).
-// 점검 라운드(stop_hook_active) 중 새로 생긴 수정은 막지 않고 비운다. 짝은 update-docs-track.mjs.
+// 점검 라운드(stop_hook_active) 중 새로 생긴 수정은 막지 않고 비운다.
+// 같은 작업에서 대응표가 가리키는 문서도 고친 레포는 막지 않는다. 짝은 update-docs-track.mjs.
 import { existsSync, readFileSync, rmSync } from "node:fs";
 import { readStdinJson, stateFile } from "./lib.mjs";
 
@@ -18,10 +19,12 @@ function main() {
   } finally {
     rmSync(file, { force: true });
   }
-  if (data.stop_hook_active || !Object.values(state).some((f) => f.length)) return;
+  // 같은 작업에서 대응표의 문서까지 고친 레포는 이미 문서를 맞춘 것으로 보고 뺀다
+  const pending = Object.entries(state).filter(([, s]) => s.code.length && !s.docs.length);
+  if (data.stop_hook_active || !pending.length) return;
 
   const lines = [];
-  for (const [root, files] of Object.entries(state)) {
+  for (const [root, { code: files }] of pending) {
     lines.push(`[${root}]`, ...files.slice(0, MAX_LIST).map((p) => `- ${p}`));
     if (files.length > MAX_LIST) lines.push(`- … 외 ${files.length - MAX_LIST}개`);
   }

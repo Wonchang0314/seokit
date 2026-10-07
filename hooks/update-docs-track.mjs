@@ -1,9 +1,10 @@
 // PostToolUse(Edit|Write|MultiEdit|NotebookEdit): Claude 가 고친 코드 파일을 '문서 점검 대기'에 적는다.
-// opt-in 레포(lib.mjs OPT_IN_MARKERS)에서만 동작한다. 문서·테스트·.claude 파일은 대상이 아니다.
+// 대응표(docs-map.md)의 '고칠 문서' 칸이 가리키는 문서를 고치면 docs 에 따로 적는다(gate 가 그 레포는 막지 않는다).
+// opt-in 레포(lib.mjs OPT_IN_MARKERS)에서만 동작한다. 그 밖의 문서·테스트·.claude 파일은 대상이 아니다.
 // 짝은 update-docs-gate.mjs(Stop).
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, relative, resolve } from "node:path";
-import { gitRoot, isCode, isOptedIn, readStdinJson, stateFile } from "./lib.mjs";
+import { gitRoot, isCode, isOptedIn, mappedDocPatterns, readStdinJson, stateFile } from "./lib.mjs";
 
 function main() {
   const data = readStdinJson();
@@ -16,14 +17,16 @@ function main() {
   const root = gitRoot(dirname(abs));
   if (!root || !isOptedIn(root)) return;
   const rel = relative(root, abs);
-  if (rel.startsWith("..") || !isCode(rel)) return;
+  if (rel.startsWith("..")) return;
+  const kind = isCode(rel) ? "code" : mappedDocPatterns(root).some((re) => re.test(rel)) ? "docs" : null;
+  if (!kind) return;
 
   const { dir, file } = stateFile(sid);
   let state = {};
   try {
     state = JSON.parse(readFileSync(file, "utf8"));
   } catch {}
-  const files = (state[root] ??= []);
+  const files = (state[root] ??= { code: [], docs: [] })[kind];
   if (files.includes(rel)) return;
   files.push(rel);
   mkdirSync(dir, { recursive: true });

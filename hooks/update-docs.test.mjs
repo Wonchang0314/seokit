@@ -8,15 +8,15 @@ import { fileURLToPath } from "node:url";
 
 const HOOKS = fileURLToPath(new URL(".", import.meta.url));
 
-function tmpRepo({ optIn = "docs-map" } = {}) {
+function tmpRepo({ optIn = "docs-map", map = "# map\n" } = {}) {
   const root = realpathSync(mkdtempSync(join(tmpdir(), "seokit-repo-")));
   spawnSync("git", ["init", "-q", root]);
   if (optIn === "docs-map") {
     mkdirSync(join(root, ".claude"), { recursive: true });
-    writeFileSync(join(root, ".claude/docs-map.md"), "# map\n");
+    writeFileSync(join(root, ".claude/docs-map.md"), map);
   } else if (optIn === "legacy") {
     mkdirSync(join(root, ".claude/skills/update-docs"), { recursive: true });
-    writeFileSync(join(root, ".claude/skills/update-docs/SKILL.md"), "# legacy\n");
+    writeFileSync(join(root, ".claude/skills/update-docs/SKILL.md"), map);
   }
   return root;
 }
@@ -47,14 +47,14 @@ test("track: opt-in 레포의 코드 파일 수정을 레포별로 기록한다"
   const root = tmpRepo();
   const sd = newStateDir();
   edit(root, "src/app.ts", sd);
-  assert.deepEqual(state(sd), { [root]: ["src/app.ts"] });
+  assert.deepEqual(state(sd), { [root]: { code: ["src/app.ts"], docs: [] } });
 });
 
 test("track: 옛 .claude/skills/update-docs/SKILL.md 만 있어도 opt-in 으로 본다", () => {
   const root = tmpRepo({ optIn: "legacy" });
   const sd = newStateDir();
   edit(root, "src/app.ts", sd);
-  assert.deepEqual(state(sd), { [root]: ["src/app.ts"] });
+  assert.deepEqual(state(sd), { [root]: { code: ["src/app.ts"], docs: [] } });
 });
 
 test("track: opt-in 표시가 없는 레포는 기록하지 않는다", () => {
@@ -90,14 +90,14 @@ test("track: 같은 파일을 여러 번 고쳐도 한 번만 기록한다", () 
   edit(root, "a.ts", sd);
   edit(root, "b.ts", sd);
   edit(root, "a.ts", sd);
-  assert.deepEqual(state(sd), { [root]: ["a.ts", "b.ts"] });
+  assert.deepEqual(state(sd), { [root]: { code: ["a.ts", "b.ts"], docs: [] } });
 });
 
 test("track: NotebookEdit 의 notebook_path 도 기록한다", () => {
   const root = tmpRepo();
   const sd = newStateDir();
   run("update-docs-track.mjs", { session_id: "s1", tool_input: { notebook_path: join(root, "nb.ipynb") } }, sd);
-  assert.deepEqual(state(sd), { [root]: ["nb.ipynb"] });
+  assert.deepEqual(state(sd), { [root]: { code: ["nb.ipynb"], docs: [] } });
 });
 
 test("track: 깨진 입력에도 0 으로 끝나고 아무것도 쓰지 않는다", () => {
@@ -146,13 +146,13 @@ test("gate: 다른 세션의 기록으로는 막지 않는다", () => {
   edit(root, "src/app.ts", sd, "other");
   const res = run("update-docs-gate.mjs", { session_id: "s1" }, sd);
   assert.equal(res.stdout, "");
-  assert.deepEqual(state(sd, "other"), { [root]: ["src/app.ts"] });
+  assert.deepEqual(state(sd, "other"), { [root]: { code: ["src/app.ts"], docs: [] } });
 });
 
 test("gate: 30개가 넘으면 30개만 보여 주고 나머지 개수를 적는다", () => {
   const sd = newStateDir();
   const files = Array.from({ length: 32 }, (_, i) => `f${i}.ts`);
-  writeFileSync(join(sd, "s1.json"), JSON.stringify({ "/r": files }));
+  writeFileSync(join(sd, "s1.json"), JSON.stringify({ "/r": { code: files, docs: [] } }));
   const out = JSON.parse(run("update-docs-gate.mjs", { session_id: "s1" }, sd).stdout);
   assert.ok(out.reason.includes("- f29.ts\n- … 외 2개"));
   assert.ok(!out.reason.includes("- f30.ts"));
@@ -162,6 +162,109 @@ test("gate: 깨진 입력에도 0 으로 끝나고 막지 않는다", () => {
   const res = run("update-docs-gate.mjs", "{", newStateDir());
   assert.equal(res.code, 0);
   assert.equal(res.stdout, "");
+});
+
+// ── 대응 문서를 같이 고친 경우 ──
+
+const MAP = `# 코드 → 문서 대응표
+
+| 바뀐 코드 | 고칠 문서 |
+|---|---|
+| \`src/features/<모듈>/**\` | \`.claude/skills/<모듈>/SKILL.md\`(파일 지도) + 같은 폴더 \`features/*.md\`(명세) |
+| \`src/{api,lib}/**\` | \`docs/{api,lib}.md\` |
+| \`hooks/**\` | \`README.md\` 구조 트리 |
+| \`scripts/**\` | \`docs/guide/**\` |
+`;
+
+const gate = (sd, sid = "s1") => run("update-docs-gate.mjs", { session_id: sid }, sd);
+
+test("gate: 같은 작업에서 대응표의 문서도 고쳤으면 막지 않고 기록을 지운다", () => {
+  const root = tmpRepo({ map: MAP });
+  const sd = newStateDir();
+  edit(root, "hooks/a.mjs", sd);
+  edit(root, "README.md", sd);
+  const res = gate(sd);
+  assert.equal(res.code, 0);
+  assert.equal(res.stdout, "");
+  assert.equal(state(sd), null);
+});
+
+test("gate: 문서를 코드보다 먼저 고쳐도 막지 않는다", () => {
+  const root = tmpRepo({ map: MAP });
+  const sd = newStateDir();
+  edit(root, "README.md", sd);
+  edit(root, "hooks/a.mjs", sd);
+  assert.equal(gate(sd).stdout, "");
+});
+
+test("gate: 대응표에 없는 문서만 고쳤으면 그대로 막는다", () => {
+  const root = tmpRepo({ map: MAP });
+  const sd = newStateDir();
+  edit(root, "hooks/a.mjs", sd);
+  edit(root, "NOTES.md", sd);
+  edit(root, "src/features/crm/README.md", sd);
+  assert.equal(JSON.parse(gate(sd).stdout).decision, "block");
+});
+
+test("gate: '바뀐 코드' 칸의 경로와만 맞는 파일은 대응 문서로 치지 않는다", () => {
+  const root = tmpRepo({ map: MAP });
+  const sd = newStateDir();
+  edit(root, "hooks/a.mjs", sd);
+  edit(root, "hooks/notes.md", sd);
+  assert.equal(JSON.parse(gate(sd).stdout).decision, "block");
+});
+
+test("gate: 자리표시자·글롭·중괄호·'같은 폴더' 상대 경로도 대응 문서로 알아본다", () => {
+  for (const doc of [
+    ".claude/skills/crm/SKILL.md",
+    ".claude/skills/crm/features/list.md",
+    "docs/api.md",
+    "docs/lib.md",
+    "docs/guide/a/b.md",
+  ]) {
+    const root = tmpRepo({ map: MAP });
+    const sd = newStateDir();
+    edit(root, "src/features/crm/a.ts", sd);
+    edit(root, doc, sd);
+    assert.equal(gate(sd).stdout, "", doc);
+  }
+});
+
+test("gate: 옛 .claude/skills/update-docs/SKILL.md 의 대응표도 읽는다", () => {
+  const root = tmpRepo({ optIn: "legacy", map: MAP });
+  const sd = newStateDir();
+  edit(root, "hooks/a.mjs", sd);
+  edit(root, "README.md", sd);
+  assert.equal(gate(sd).stdout, "");
+});
+
+test("gate: 문서를 고친 레포만 빼고 다른 레포는 막는다", () => {
+  const a = tmpRepo({ map: MAP });
+  const b = tmpRepo({ map: MAP });
+  const sd = newStateDir();
+  edit(a, "hooks/a.mjs", sd);
+  edit(a, "README.md", sd);
+  edit(b, "hooks/b.mjs", sd);
+  const out = JSON.parse(gate(sd).stdout);
+  assert.equal(out.decision, "block");
+  assert.ok(out.reason.includes(`[${b}]\n- hooks/b.mjs`));
+  assert.ok(!out.reason.includes(`[${a}]`));
+});
+
+test("gate: 코드는 안 고치고 대응 문서만 고쳤으면 막지 않고 기록을 지운다", () => {
+  const root = tmpRepo({ map: MAP });
+  const sd = newStateDir();
+  edit(root, "README.md", sd);
+  assert.equal(gate(sd).stdout, "");
+  assert.equal(state(sd), null);
+});
+
+test("track: 대응 문서 수정은 docs 에 따로 기록한다", () => {
+  const root = tmpRepo({ map: MAP });
+  const sd = newStateDir();
+  edit(root, "README.md", sd);
+  edit(root, "README.md", sd);
+  assert.deepEqual(state(sd), { [root]: { code: [], docs: ["README.md"] } });
 });
 
 // ── session-start ──

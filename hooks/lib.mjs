@@ -34,6 +34,37 @@ export function isCode(rel) {
   return !TEST_PAT.test("/" + rel);
 }
 
+// 대응표 '고칠 문서' 칸(둘째 칸)에 백틱으로 적힌 경로를 정규식으로 바꾼다.
+// `<모듈>` 은 한 폴더, `*`·`**`·`{a,b}` 는 글롭. 경로는 최상위 기준으로 맞추고,
+// init 표기대로 "같은 폴더 `features/*.md`" 처럼 앞에 '같은 폴더'가 붙은 경로만 어느 폴더 아래든 맞춘다.
+export function mappedDocPatterns(root) {
+  const patterns = [];
+  for (const m of OPT_IN_MARKERS) {
+    const f = join(root, m);
+    if (!existsSync(f)) continue;
+    for (const line of readFileSync(f, "utf8").split("\n")) {
+      const cells = line.trim().split("|").slice(1, -1);
+      if (cells.length < 2) continue;
+      for (const [, prefix, path] of cells[1].matchAll(/(같은 폴더\s*)?`([^`]+)`/g)) {
+        patterns.push(globToRegExp(path, Boolean(prefix)));
+      }
+    }
+  }
+  return patterns;
+}
+
+function globToRegExp(glob, anyDir) {
+  const src = glob
+    .trim()
+    .replace(/^\.?\//, "")
+    .replace(/<[^>]+>|\*\*\/|\*\*|\*|\?|\{([^}]*)\}|[.+^$()|[\]\\]/g, (t, alts) => {
+      if (alts !== undefined) return `(?:${alts.split(",").map((a) => a.replace(/[.+^$()|[\]\\*?]/g, "\\$&")).join("|")})`;
+      if (t.startsWith("<")) return "[^/]+";
+      return { "**/": "(?:.*/)?", "**": ".*", "*": "[^/]*", "?": "[^/]" }[t] ?? `\\${t}`;
+    });
+  return new RegExp(`^${anyDir ? "(?:.*/)?" : ""}${src}$`);
+}
+
 export function stateFile(sessionId) {
   const dir = process.env.SEOKIT_STATE_DIR || join(homedir(), ".claude/state/update-docs");
   return { dir, file: join(dir, `${sessionId}.json`) };
